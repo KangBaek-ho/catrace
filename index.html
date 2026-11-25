@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>고양이 장애물 달리기</title>
+<title>고양이 레이스 · 축구</title>
 <style>
   :root { color-scheme: dark; }
   html, body { margin: 0; height: 100%; overflow: hidden; background: #9ad4ff; touch-action: none; overscroll-behavior: none; font-family: system-ui, -apple-system, "Noto Sans KR", sans-serif; }
@@ -14,7 +14,7 @@
   #rinfo { left: 50%; transform: translateX(-50%); top: calc(env(safe-area-inset-top, 0px) + 10px); font-size: 17px; display: none; text-align: center; }
   .btn { position: fixed; right: 12px; top: calc(env(safe-area-inset-top, 0px) + 10px); padding: 9px 14px; border: 0; border-radius: 12px; background: #ff9800; color: #1b1200; font: 700 15px system-ui, -apple-system, "Noto Sans KR", sans-serif; cursor: pointer; }
   #exit { display: none; background: #eceff1; }
-  #menu, #res, #shop { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(10,20,40,.55); z-index: 5; }
+  #menu, #res, #shop, #nm { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(10,20,40,.55); z-index: 5; }
   .card { background: #fff; color: #1b2430; border-radius: 18px; padding: 18px; width: min(92vw, 380px); box-shadow: 0 10px 40px rgba(0,0,0,.35); text-align: center; max-height: 86vh; overflow: auto; }
   .card h2 { margin: 0 0 12px; font-size: 20px; }
   .card button { display: block; width: 100%; margin: 8px 0 0; padding: 13px; border: 0; border-radius: 12px; background: #eef3f8; font: 700 16px system-ui, -apple-system, "Noto Sans KR", sans-serif; color: #1b2430; cursor: pointer; text-align: left; }
@@ -31,6 +31,8 @@
   .it span { display: block; font-size: 12px; font-weight: 400; opacity: .7; margin: 2px 0 4px; }
   .it button { margin: 4px 0 0; padding: 8px; text-align: center; font-size: 14px; }
   .it button.no { opacity: .45; }
+  #nm input { width: 100%; box-sizing: border-box; padding: 12px; border: 2px solid #cfd8e3; border-radius: 12px; font: 600 17px system-ui, -apple-system, "Noto Sans KR", sans-serif; text-align: center; margin: 4px 0 2px; }
+  #nn { font-size: 12px; opacity: .65; margin: 6px 0 0; }
   #sn { font-size: 13px; color: #d84315; min-height: 18px; margin: 8px 0 0; }
   #list { text-align: left; font-size: 15px; line-height: 1.8; margin: 8px 0 4px; }
   #cd { position: fixed; left: 0; right: 0; top: 28%; text-align: center; color: #fff; font: 900 96px/1 system-ui, -apple-system, "Noto Sans KR", sans-serif; text-shadow: 0 4px 18px rgba(0,0,0,.5); pointer-events: none; }
@@ -49,10 +51,12 @@
 <div id="hud" class="pill">🐱 <span id="skinName">기본</span><small id="help"></small></div>
 <div id="rinfo" class="pill"></div>
 <button id="shopb" class="btn">🛒 상점</button>
+<button id="nameb" class="btn" style="right:118px;background:#eceff1">✏️ 이름</button>
 <button id="exit" class="btn">로비로</button>
 <div id="cd"></div>
 <div id="shop"><div class="card"><h2>🛒 스킨 상점 <small id="sg"></small></h2>
   <div id="sl"></div><p id="sn"></p><button class="sub" id="sx">닫기</button></div></div>
+<div id="nm"><div class="card"><h2>✏️ 내 이름</h2><input id="ni" maxlength="10" placeholder="이름 (최대 10글자)" autocomplete="off"><p id="nn">고양이 게임에서 정한 이름과 같은 이름이에요 (같은 사이트 주소에서 열었을 때)</p><button class="go" id="ns">저장</button><button class="sub" id="nx">취소</button></div></div>
 <div id="res"><div class="card"><h2 id="rt"></h2><div id="list"></div>
   <button class="go" id="again">한 판 더 (랜덤 코스)</button><button class="sub" id="lobby">로비로</button></div></div>
 <div id="joy"><div id="knob"></div></div>
@@ -226,7 +230,8 @@
   function refreshSkin() {
     const { sk } = loadSaved();
     applySkin(R[0].cat, sk);
-    $('skinName').textContent = SK[sk].n + ' · 💰 ' + money(readState()) + '원';
+    $('skinName').textContent = myName() + ' · ' + SK[sk].n + ' · 💰 ' + money(readState()) + '원';
+    if (R[0].tag) drawTag(R[0]);
   }
   function renderShop(note) {
     const st = readState(), cur = loadSaved().sk;
@@ -241,6 +246,9 @@
   }
   $('shopb').onclick = () => { $('shop').style.display = 'flex'; renderShop(''); };
   $('sx').onclick = () => { $('shop').style.display = 'none'; };
+  $('nameb').onclick = () => { $('ni').value = (lsGet('catName', '') || '').slice(0, 10); $('nm').style.display = 'flex'; };
+  $('nx').onclick = () => { $('nm').style.display = 'none'; };
+  $('ns').onclick = () => { try { localStorage.setItem('catName', $('ni').value.trim().slice(0, 10)); } catch (e) {} $('nm').style.display = 'none'; refreshSkin(); };
   $('sl').onclick = e => {
     const b = e.target.closest('button[data-a]'); if (!b) return;
     const i = +b.dataset.i, k = SK[i], st = readState(), buy = b.dataset.a === 'buy' && !st.own[i];
@@ -252,9 +260,14 @@
     refreshSkin(); renderShop(buy ? '구매 완료! 바로 장착했어요 🎉' : '');
   };
 
+  const ballGeo = (() => {
+    const g = new THREE.IcosahedronGeometry(1, 1), p = g.attributes.position, col = new Float32Array(p.count * 3);
+    for (let v = 0; v < p.count; v++) { const f = (v / 3) | 0, d = f % 5 === 2 ? .12 : 1; col[v * 3] = col[v * 3 + 1] = col[v * 3 + 2] = d; }
+    g.setAttribute('color', new THREE.BufferAttribute(col, 3)); return g;
+  })();
+
   // ---------- 달리는 고양이들 (0번 = 나) ----------
-  const NAMES = ['나', '뭉치', '나비', '치즈', '콩이', '보리'];
-  const LANES = [-1, -5, -3, 1, 3, 5];
+  const NAMES = ['나', '뭉치', '나비', '치즈', '콩이', '보리', '두부', '모모', '초코', '밤이', '별이', '하늘', '구름', '쿠키', '라떼', '망고', '젤리', '호두'];
   const R = NAMES.map((name, i) => {
     const cat = mkCat(SK[0].c, SK[0].c2);
     const sled = new THREE.Group();
@@ -265,7 +278,7 @@
     const stripe = new THREE.Mesh(new THREE.BoxGeometry(2.64, .18, 4.24), mat(0xffffff)); stripe.position.y = .38; boat.add(stripe);
     const bow = new THREE.Mesh(new THREE.ConeGeometry(1.3, 1.6, 4), mat(0x1e88e5)); bow.rotation.set(Math.PI / 2, Math.PI / 4, 0); bow.position.set(0, .1, 2.9); boat.add(bow);
     sled.visible = boat.visible = false; S.add(sled); S.add(boat);
-    const car = new THREE.Group(), ccol = [0xe53935, 0x1e88e5, 0xfdd835, 0x43a047, 0x8e24aa, 0xff7043][i];
+    const car = new THREE.Group(), ccol = [0xe53935, 0x1e88e5, 0xfdd835, 0x43a047, 0x8e24aa, 0xff7043][i % 6];
     const cb = (w, h, d, c, x, y, z) => { const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(c)); m.position.set(x, y, z); m.castShadow = true; car.add(m); };
     cb(2.2, .7, 4.2, ccol, 0, .6, 0); cb(.5, .72, 4.22, 0xffffff, 0, .6, 0); cb(2.2, .12, .7, ccol, 0, 1.4, -1.9); cb(.2, .5, .2, ccol, -.8, 1.15, -1.9); cb(.2, .5, .2, ccol, .8, 1.15, -1.9);
     cb(.5, .2, .1, 0xfff59d, -.7, .75, 2.12); cb(.5, .2, .1, 0xfff59d, .7, .75, 2.12);
@@ -277,10 +290,32 @@
     ob(.5, .2, .1, 0xfff59d, -.8, 1.2, 2.12); ob(.5, .2, .1, 0xfff59d, .8, 1.2, 2.12);
     [[-1.45, 1.4], [1.45, 1.4], [-1.45, -1.4], [1.45, -1.4]].forEach(([x, z]) => { const w = new THREE.Mesh(new THREE.CylinderGeometry(.8, .8, .7, 14), mat(0x212121)); w.rotation.z = Math.PI / 2; w.position.set(x, .8, z); w.castShadow = true; off.add(w); });
     off.visible = false; S.add(off);
-    return { cat, name, i, ai: i > 0, lane: LANES[i], sled, boat, car, off, skill: .55 + Math.random() * .4, spd: .88 + Math.random() * .09, jd: 1.4 + Math.random() * 1.4, st: {} };
+    return { cat, name, i, ai: i > 0, lane: 0, sled, boat, car, off, skill: .55 + Math.random() * .4, spd: .88 + Math.random() * .09, jd: 1.4 + Math.random() * 1.4, st: {} };
   });
   R.forEach((r, i) => { if (i) { applySkin(r.cat, Math.floor(Math.random() * SK.length)); } });
+  let nAct = 1, ACT = R.slice(0, 1); const A = () => ACT;
+  const setAct = n => { nAct = n; ACT = R.slice(0, n); };
+  const esc = t => String(t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  function myName() { return (lsGet('catName', '') || '').slice(0, 10).trim() || '나'; }
+  const nameOf = r => r.i ? r.name : myName();
+  function drawTag(r) {
+    const { cv, sprite } = r.tag, g = cv.getContext('2d'), nm = nameOf(r);
+    g.clearRect(0, 0, 320, 80); g.fillStyle = r.team ? 'rgba(229,57,53,.88)' : 'rgba(30,136,229,.88)';
+    const x = 6, y = 8, w = 308, h = 64, rad = 22;
+    g.beginPath(); g.moveTo(x + rad, y); g.arcTo(x + w, y, x + w, y + h, rad); g.arcTo(x + w, y + h, x, y + h, rad); g.arcTo(x, y + h, x, y, rad); g.arcTo(x, y, x + w, y, rad); g.closePath(); g.fill();
+    g.fillStyle = '#fff'; let fs = 40; const ff = () => 'bold ' + fs + 'px system-ui, "Noto Sans KR", sans-serif';
+    g.font = ff(); while (g.measureText(nm).width > 284 && fs > 18) { fs -= 2; g.font = ff(); }
+    g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(nm, 160, 41); sprite.material.map.needsUpdate = true;
+  }
+  R.forEach(r => {
+    r.team = r.i % 2; r.goals = 0;
+    const band = new THREE.Mesh(sp, mat(r.team ? 0xe53935 : 0x1e88e5)); band.scale.set(.8, .28, .66); band.position.set(0, 1.3, 0); band.visible = false; r.cat.g.add(band); r.band = band;
+    const cv = document.createElement('canvas'); cv.width = 320; cv.height = 80;
+    const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cv), transparent: true })); sprite.scale.set(3.6, .9, 1); sprite.position.set(0, 4.9, 0); r.cat.g.add(sprite);
+    r.tag = { cv, sprite }; drawTag(r);
+  });
   refreshSkin();
+  addEventListener('storage', refreshSkin);
   addEventListener('focus', refreshSkin);
   document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshSkin(); });
 
@@ -302,24 +337,39 @@
     const m = new THREE.Mesh(new THREE.PlaneGeometry(w, l), new THREE.MeshLambertMaterial({ color: col }));
     m.rotation.x = -Math.PI / 2 + (tilt || 0); m.position.set(0, y, z); m.receiveShadow = true; W.add(m); return m;
   }
-  function build(name) {
-    clearW(); rgs = 7; C = { name, mode: 'W' };
+  function build(name, nn) {
+    clearW(); rgs = 7; C = { name, mode: 'W', n: nn };
     if (name === 'lobby') {
-      env(0x9ad4ff, 30, 90); C.cx = C.cz = 19;
+      env(0x9ad4ff, 40, 110); C.cx = 19; C.cz = 25;
       const tc = document.createElement('canvas'); tc.width = tc.height = 128; const tg = tc.getContext('2d');
       tg.fillStyle = '#8fd17a'; tg.fillRect(0, 0, 128, 128); tg.fillStyle = '#7cc269'; tg.fillRect(0, 0, 64, 64); tg.fillRect(64, 64, 64, 64);
-      const tex = new THREE.CanvasTexture(tc); tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.repeat.set(20, 20); tex.magFilter = THREE.NearestFilter;
-      const f = new THREE.Mesh(new THREE.PlaneGeometry(40, 40), new THREE.MeshLambertMaterial({ map: tex })); f.rotation.x = -Math.PI / 2; f.receiveShadow = true; W.add(f);
-      bx(-20, 20, -2, 0, -20, 20, 0, { floor: 1 }).m.visible = false;
-      [[-20, 20, -20.4, -19.6], [-20, 20, 19.6, 20.4]].forEach(r => bx(r[0], r[1], 0, .8, r[2], r[3], 0xffffff, { deco: 1 }));
-      [[-20.4, -19.6], [19.6, 20.4]].forEach(r => bx(r[0], r[1], 0, .8, -20, 20, 0xffffff, { deco: 1 }));
-      // 하늘색 텔레포터: 올라가면 랜덤 코스로 이동
-      const pad = bx(-2, 2, 0, .3, 8, 12, 0x4fc3f7, { tele: 1 }); pad.m.material.emissive.set(0x1a88bb);
-      const beam = new THREE.Mesh(new THREE.CylinderGeometry(1.6, 1.6, 7, 16, 1, true), new THREE.MeshBasicMaterial({ color: 0x81d4fa, transparent: true, opacity: .28, side: THREE.DoubleSide }));
-      beam.position.set(0, 3.8, 10); W.add(beam); C.beam = beam;
-      const lc = document.createElement('canvas'); lc.width = 512; lc.height = 128; const lg = lc.getContext('2d');
-      lg.fillStyle = 'rgba(0,0,0,.55)'; lg.fillRect(0, 0, 512, 128); lg.fillStyle = '#fff'; lg.font = 'bold 56px system-ui, sans-serif'; lg.textAlign = 'center'; lg.textBaseline = 'middle'; lg.fillText('🏁 랜덤 달리기', 256, 66);
-      const sprt = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(lc) })); sprt.scale.set(6, 1.5, 1); sprt.position.set(0, 8.2, 10); W.add(sprt);
+      const tex = new THREE.CanvasTexture(tc); tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.repeat.set(20, 26); tex.magFilter = THREE.NearestFilter;
+      const f = new THREE.Mesh(new THREE.PlaneGeometry(40, 52), new THREE.MeshLambertMaterial({ map: tex })); f.rotation.x = -Math.PI / 2; f.receiveShadow = true; W.add(f);
+      bx(-20, 20, -2, 0, -26, 26, 0, { floor: 1 }).m.visible = false;
+      [[-20, 20, -26.4, -25.6], [-20, 20, 25.6, 26.4]].forEach(r => bx(r[0], r[1], 0, .8, r[2], r[3], 0xffffff, { deco: 1 }));
+      [[-20.4, -19.6], [19.6, 20.4]].forEach(r => bx(r[0], r[1], 0, .8, -26, 26, 0xffffff, { deco: 1 }));
+      // 가운데 빨간 카펫 (시작 위치)
+      bx(-5.5, 5.5, 0, .1, -3.5, 3.5, 0xff0000, { deco: 1 });
+      // 바닥 글씨
+      const flat = (txt, x, z, w, h, fill) => {
+        const c = document.createElement('canvas'); c.width = 1024; c.height = Math.round(1024 * h / w); const g = c.getContext('2d');
+        g.font = 'bold ' + Math.round(c.height * .72) + 'px system-ui, "Noto Sans KR", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+        g.lineJoin = 'round'; g.lineWidth = Math.round(c.height * .09); g.strokeStyle = '#1b2430'; g.strokeText(txt, c.width / 2, c.height / 2 + 6);
+        g.fillStyle = fill; g.fillText(txt, c.width / 2, c.height / 2 + 6);
+        const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(c), transparent: true, depthWrite: false }));
+        m.rotation.x = -Math.PI / 2; m.position.set(x, .06, z); W.add(m);
+      };
+      flat('고양이 레이스', 0, -21.5, 15, 3.6, '#ffffff'); flat('고양이 축구', 0, 21.5, 13, 3.6, '#ffffff');
+      // 텔레포터: 위쪽 노란색 = 레이스, 아래쪽 파란색 = 축구
+      const pad = (x, z, k, n, col, glow) => {
+        const o = bx(x - 1.7, x + 1.7, 0, .3, z - 1.7, z + 1.7, col, { tele: { k, n } }); o.m.visible = false;
+        const d = new THREE.Mesh(new THREE.CylinderGeometry(2.1, 2.1, .3, 32), new THREE.MeshLambertMaterial({ color: col, emissive: col, emissiveIntensity: .35 })); d.position.set(x, .15, z); d.receiveShadow = true; W.add(d);
+        const gl = new THREE.Mesh(new THREE.CircleGeometry(3.4, 32), new THREE.MeshBasicMaterial({ color: glow, transparent: true, opacity: .38, depthWrite: false })); gl.rotation.x = -Math.PI / 2; gl.position.set(x, .04, z); W.add(gl);
+        const c = document.createElement('canvas'); c.width = c.height = 128; const g = c.getContext('2d');
+        g.fillStyle = '#111'; g.font = 'bold 52px system-ui, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(n + ':' + n, 64, 68);
+        const lb = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 3.2), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(c), transparent: true })); lb.rotation.x = -Math.PI / 2; lb.position.set(x, .32, z); W.add(lb);
+      };
+      [-15, -5, 5, 15].forEach((x, i) => { const n = [1, 3, 5, 9][i]; pad(x, -15, 'race', n, 0xffff00, 0xfff176); pad(x, 15, 'soc', n, 0x00b0f0, 0x90caf9); });
       C.L = 0;
     } else if (name === 'jump') {
       env(0x7ec8ff, 50, 150); C.plats = [];
@@ -348,6 +398,30 @@
       }
       C.L = z + 10; C.cx = 7.4; arch(C.L, 0, 7.5);
       bx(-8, 8, -3, 0, -10, C.L + 40, 0xbcaaa4, { floor: 1 });
+    } else if (name === 'soccer') {
+      const SZ = { 1: [26, 40, 7], 3: [34, 52, 14], 5: [40, 62, 16], 9: [48, 76, 20] }, [FW, FL, GW] = SZ[nn] || SZ[3];
+      env(0x9ad4ff, 60, 180); Object.assign(C, { fw: FW, fl: FL, gw: GW, cx: FW / 2 - .8, cz: FL / 2 - .8 });
+      const tc = document.createElement('canvas'); tc.width = 64; tc.height = 128; const tg = tc.getContext('2d');
+      tg.fillStyle = '#4caf50'; tg.fillRect(0, 0, 64, 128); tg.fillStyle = '#43a047'; tg.fillRect(0, 0, 64, 64);
+      const tex = new THREE.CanvasTexture(tc); tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.repeat.set(1, (FL + 8) / 8);
+      const pl = new THREE.Mesh(new THREE.PlaneGeometry(FW + 6, FL + 8), new THREE.MeshLambertMaterial({ map: tex })); pl.rotation.x = -Math.PI / 2; pl.receiveShadow = true; W.add(pl);
+      bx(-FW / 2 - 3, FW / 2 + 3, -2, 0, -FL / 2 - 4, FL / 2 + 4, 0, { floor: 1 }).m.visible = false;
+      const ln = (x0, x1, z0, z1) => bx(x0, x1, 0, .03, z0, z1, 0xffffff, { deco: 1 });
+      ln(-FW / 2 - .1, -FW / 2 + .1, -FL / 2, FL / 2); ln(FW / 2 - .1, FW / 2 + .1, -FL / 2, FL / 2);
+      ln(-FW / 2, FW / 2, -FL / 2 - .1, -FL / 2 + .1); ln(-FW / 2, FW / 2, FL / 2 - .1, FL / 2 + .1); ln(-FW / 2, FW / 2, -.1, .1);
+      [-1, 1].forEach(sg => { const bz = sg * FL / 2, bw = GW / 2 + 3, dz = sg * 6; ln(-bw, bw, bz - sg * 6 - .1, bz - sg * 6 + .1); ln(-bw - .1, -bw + .1, Math.min(bz, bz - dz), Math.max(bz, bz - dz)); ln(bw - .1, bw + .1, Math.min(bz, bz - dz), Math.max(bz, bz - dz)); });
+      const ring = new THREE.Mesh(new THREE.RingGeometry(3.4, 3.6, 40), new THREE.MeshBasicMaterial({ color: 0xffffff })); ring.rotation.x = -Math.PI / 2; ring.position.y = .035; W.add(ring);
+      bx(-FW / 2 - .6, -FW / 2 - .2, 0, .9, -FL / 2 - .6, FL / 2 + .6, 0xffffff, { deco: 1 }); bx(FW / 2 + .2, FW / 2 + .6, 0, .9, -FL / 2 - .6, FL / 2 + .6, 0xffffff, { deco: 1 });
+      [-1, 1].forEach(sg => { const z0 = sg * FL / 2 + (sg > 0 ? .2 : -.6), z1 = z0 + .4; bx(-FW / 2 - .6, -GW / 2, 0, .9, z0, z1, 0xffffff, { deco: 1 }); bx(GW / 2, FW / 2 + .6, 0, .9, z0, z1, 0xffffff, { deco: 1 }); });
+      const goal = (sg, col) => {
+        const zc = sg * FL / 2, zb = zc + sg * 3, lo = Math.min(zc, zb), hi = Math.max(zc, zb), net = o => { o.m.material.transparent = true; o.m.material.opacity = .3; };
+        [-1, 1].forEach(q => { bx(q * GW / 2 - .2, q * GW / 2 + .2, 0, 4.7, zc - .2, zc + .2, col, { deco: 1 }); net(bx(q * GW / 2 - .05, q * GW / 2 + .05, 0, 4.5, lo, hi, 0xffffff, { deco: 1 })); });
+        bx(-GW / 2 - .2, GW / 2 + .2, 4.3, 4.7, zc - .2, zc + .2, col, { deco: 1 });
+        net(bx(-GW / 2, GW / 2, 0, 4.5, zb - .05, zb + .05, 0xffffff, { deco: 1 })); net(bx(-GW / 2, GW / 2, 4.5, 4.58, lo, hi, 0xffffff, { deco: 1 }));
+      };
+      goal(1, 0x1e88e5); goal(-1, 0xe53935);
+      const bm = new THREE.Mesh(ballGeo, new THREE.MeshLambertMaterial({ vertexColors: true })); bm.castShadow = true; W.add(bm);
+      C.ball = { m: bm, x: 0, y: 1, z: 0, vx: 0, vy: 0, vz: 0, last: null }; C.sc = [0, 0]; C.win = 15; C.L = 1e9;
     } else {
       const sled = name === 'sled', car = name === 'car', off = name === 'off'; C.mode = 'L';
       C.L = sled ? 560 : car ? 900 : off ? 620 : 520; C.T = sled ? 21 : car ? 26 : off ? 20 : 17; C.W = sled ? 11 : off ? 10 : 9;
@@ -440,10 +514,11 @@
   // ---------- 입력 ----------
   const isTouch = matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0;
   if (isTouch) document.body.classList.add('touch');
-  $('help').textContent = isTouch ? '조이스틱 · 점프 · 슬라이딩 · 하늘색 텔레포터로 달리기!' : 'WASD · 스페이스 점프 · E 슬라이딩 · 하늘색 텔레포터로 달리기!';
+  $('help').textContent = isTouch ? '조이스틱 · 점프 · 슬라이딩/킥 · 노란 원=레이스 · 파란 원=축구' : 'WASD · 스페이스 점프 · E 슬라이딩/킥 · 노란 원=레이스 · 파란 원=축구';
   const keys = {};
-  addEventListener('keydown', e => { if (['KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyE', 'Space'].includes(e.code)) e.preventDefault(); keys[e.code] = true; });
-  addEventListener('keyup', e => { keys[e.code] = false; });
+  const typing = e => e.target && e.target.tagName === 'INPUT';
+  addEventListener('keydown', e => { if (typing(e)) return; if (['KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyE', 'Space'].includes(e.code)) e.preventDefault(); keys[e.code] = true; });
+  addEventListener('keyup', e => { if (typing(e)) return; keys[e.code] = false; });
   addEventListener('blur', () => { for (const k in keys) keys[k] = false; });
   const joy = $('joy'), knob = $('knob'), J = { x: 0, y: 0, id: null };
   function joyMove(e) {
@@ -464,8 +539,9 @@
   cv.addEventListener('pointerdown', e => { dragId = e.pointerId; lx = e.clientX; ly = e.clientY; cv.setPointerCapture(e.pointerId); });
   cv.addEventListener('pointermove', e => { if (e.pointerId !== dragId) return; yaw -= (e.clientX - lx) * .006; pitch = clamp(pitch + (e.clientY - ly) * .005, .12, 1.2); lx = e.clientX; ly = e.clientY; });
   ['pointerup', 'pointercancel'].forEach(ev => cv.addEventListener(ev, e => { if (e.pointerId === dragId) dragId = null; }));
+  const uiOpen = () => $('shop').style.display === 'flex' || $('nm').style.display === 'flex';
   function playerInput() {
-    if ($('shop').style.display === 'flex') return { mx: 0, mz: 0, lat: 0, jump: false, slide: false };
+    if (uiOpen()) return { mx: 0, mz: 0, lat: 0, jump: false, slide: false };
     let ix = (keys.KeyD ? 1 : 0) - (keys.KeyA ? 1 : 0) + J.x, iy = (keys.KeyW ? 1 : 0) - (keys.KeyS ? 1 : 0) + J.y;
     const l = Math.hypot(ix, iy); if (l > 1) { ix /= l; iy /= l; }
     const fx = -Math.sin(yaw), fz = -Math.cos(yaw), rx = Math.cos(yaw), rz = -Math.sin(yaw);
@@ -536,6 +612,7 @@
   // ---------- AI ----------
   function aiInput(r, dt) {
     const s = r.st, i = { mx: 0, mz: 1, lat: 0, jump: false, slide: false };
+    if (C.name === 'soccer') return socAI(r, dt);
     if (C.mode === 'L') {
       let near = null;
       for (const o of C.obs) { const d = o.z - s.z; if (d > 0 && d < C.look && Math.abs(o.x - s.x) < o.r + 1.8) { near = o; break; } }
@@ -571,42 +648,162 @@
 
   // ---------- 진행 ----------
   let mode = 'lobby', raceT = 0, cdT = 0, placed = 0, curCourse = null, endT = 0, bannerT = 0, bannerName = '';
-  const REWARD = [300, 200, 100, 50, 50, 50];
-  const NAMEC = { jump: '🦘 점프맵', park: '🏃 파쿠르', sled: '🛷 눈썰매', boat: '🚤 보트', car: '🏎️ 자동차', off: '🏜️ 오프로드' };
+  const rewardFor = rank => rank === 1 ? 300 : (nAct > 3 && rank <= 3 ? (rank === 2 ? 200 : 100) : 50);
+  let lastGame = { k: 'race', n: 3 };
+  const NAMEC = { soccer: '⚽ 고양이 축구', jump: '🦘 점프맵', park: '🏃 파쿠르', sled: '🛷 눈썰매', boat: '🚤 보트', car: '🏎️ 자동차', off: '🏜️ 오프로드' };
   let lastCourse = null, teleT = 0;
   const randomCourse = () => { const p = ['jump', 'park', 'sled', 'boat', 'car', 'off'].filter(c => c !== lastCourse); return p[Math.floor(Math.random() * p.length)]; };
   function resetRacers(race) {
     placed = 0; raceT = 0; endT = 0; bannerT = 0;
     R.forEach((r, i) => {
       const lane = race ? r.lane : 0, z0 = race ? 0 : 0;
-      r.st = { x: i ? lane : (race ? lane : 0), y: 0, z: z0, vx: 0, vy: 0, vz: 0, face: 0, walk: 0, slide: 0, scd: 0, stun: 0, boost: 0, g: true, stand: null, cpS: null, fin: 0, t: 0 };
-      r.seen = null; r.cat.g.visible = race || i === 0;
-      r.sled.visible = race && curCourse === 'sled'; r.boat.visible = race && curCourse === 'boat'; r.car.visible = race && curCourse === 'car'; r.off.visible = race && curCourse === 'off';
+      r.goals = 0; r.band.visible = race && i < nAct; r.band.material.color.set(r.team ? 0xe53935 : 0x1e88e5);
+      r.st = { x: i ? lane : (race ? lane : 0), y: 0, z: z0, vx: 0, vy: 0, vz: 0, face: 0, walk: 0, slide: 0, scd: 0, stun: 0, boost: 0, g: true, stand: null, cpS: null, fin: 0, t: 0, kick: 0, kcd: 0 };
+      r.seen = null; r.cat.g.visible = race ? i < nAct : i === 0;
+      const on = race && i < nAct; r.sled.visible = on && curCourse === 'sled'; r.boat.visible = on && curCourse === 'boat'; r.car.visible = on && curCourse === 'car'; r.off.visible = on && curCourse === 'off';
     });
   }
-  function startRace(name) {
-    curCourse = lastCourse = name; teleT = 0; build(name); resetRacers(true);
+  function startRace(name, n) {
+    n = n || lastGame.n; lastGame = { k: 'race', n }; setAct(2 * n);
+    curCourse = lastCourse = name; teleT = 0; build(name); R.forEach(r => { r.team = r.i % 2; drawTag(r); });
+    { const k = nAct, span = C.mode === 'L' ? C.W - 1.5 : 6.5, slots = [...Array(k).keys()];
+      for (let q = k - 1; q > 0; q--) { const j = Math.floor(Math.random() * (q + 1)); [slots[q], slots[j]] = [slots[j], slots[q]]; }
+      const mid = Math.floor((k - 1) / 2), at = slots.indexOf(mid); [slots[0], slots[at]] = [slots[at], slots[0]];
+      ACT.forEach((r, i) => { r.lane = -span + 2 * span * slots[i] / (k - 1); }); }
+    resetRacers(true); $('slide').textContent = '슬라이딩'; $('again').textContent = '한 판 더 (랜덤 코스)';
     if (C.mode === 'W' && C.plats) R.forEach(r => { r.st.y = 0; });
     mode = 'count'; cdT = 3.2; yaw = Math.PI; pitch = .5;
-    $('res').style.display = $('shop').style.display = 'none'; $('shopb').style.display = 'none'; $('exit').style.display = 'block'; $('rinfo').style.display = 'block';
+    $('res').style.display = $('shop').style.display = 'none'; $('shopb').style.display = $('nameb').style.display = 'none'; $('exit').style.display = 'block'; $('rinfo').style.display = 'block';
+  }
+  function startSoccer(n) {
+    lastGame = { k: 'soc', n }; setAct(2 * n); curCourse = 'soccer'; teleT = 0;
+    build('soccer', n); R.forEach(r => { r.team = r.i % 2; drawTag(r); }); resetRacers(true); kickoff();
+    mode = 'count'; cdT = 3.2; yaw = Math.PI; pitch = .5;
+    $('slide').textContent = '⚽ 킥'; $('again').textContent = '한 판 더 (축구)';
+    $('res').style.display = $('shop').style.display = 'none'; $('shopb').style.display = $('nameb').style.display = 'none'; $('exit').style.display = 'block'; $('rinfo').style.display = 'block';
+  }
+  function kickoff() {
+    const n = C.n, B = C.ball; B.x = B.z = 0; B.y = 1; B.vx = B.vy = B.vz = 0; B.last = null;
+    const mid = Math.floor((n - 1) / 2), sx = Math.min(7, C.fw / (n + 1));
+    ACT.forEach(r => {
+      const t = r.team, k = (r.i - t) / 2, side = t === 0 ? 1 : -1, s = r.st, keeper = n >= 3 && k === n - 1;
+      const slot = t === 0 ? (k === 0 ? mid : k === mid ? 0 : k) : k;
+      s.x = keeper ? 0 : (slot - (n - 1) / 2) * sx; s.z = keeper ? side * (C.fl / 2 - 3) : side * (5 + 4 * (slot % 3));
+      s.y = 0; s.vx = s.vy = s.vz = 0; s.g = true; s.stand = null; s.face = side === 1 ? Math.PI : 0; s.kick = s.kcd = s.stun = s.slide = 0;
+    });
+  }
+  function socAI(r, dt) {
+    const s = r.st, B = C.ball, t = r.team, n = C.n, side = t === 0 ? 1 : -1, gz = -side * C.fl / 2;
+    const k = (r.i - t) / 2, keeper = n >= 3 && k === n - 1, o = { mx: 0, mz: 0, lat: 0, jump: false, slide: false, kick: false };
+    const dB = Math.hypot(B.x - s.x, B.z - s.z);
+    let ch = null, bd = 1e9;
+    for (const q of ACT) { if (q.team !== t || q.i === 0) continue; if (n >= 3 && (q.i - t) / 2 === n - 1) continue; const d = Math.hypot(B.x - q.st.x, B.z - q.st.z); if (d < bd) { bd = d; ch = q; } }
+    const gx0 = -B.x, gz0 = gz - B.z, gl = Math.hypot(gx0, gz0) || 1, gvx = gx0 / gl, gvz = gz0 / gl, bh = (s.x - B.x) * gvx + (s.z - B.z) * gvz;
+    let tx, tz, press = false;
+    if (keeper) {
+      const line = side * (C.fl / 2 - 2.5);
+      if (Math.abs(B.z - line) < 8 && Math.abs(B.x) < C.gw) press = true;
+      if (press) { tx = B.x; tz = B.z; } else { tx = clamp(B.x * .5, -C.gw / 2 + 1, C.gw / 2 - 1); tz = line; }
+    } else if (ch === r || dB < 6) {
+      press = true;
+      if (bh < -.3) { tx = B.x; tz = B.z; }
+      else { const px = -gvz, pz = gvx, sg = ((s.x - B.x) * px + (s.z - B.z) * pz) >= 0 ? 1 : -1; tx = B.x - gvx * 3 + px * sg * 2.6; tz = B.z - gvz * 3 + pz * sg * 2.6; }
+    } else {
+      const sx = Math.min(7, C.fw / (n + 1)), hx = (k - (n - 1) / 2) * sx, hz = side * (8 + 5 * (k % 3));
+      tx = clamp(hx + (B.x - hx) * .3, -C.cx, C.cx); tz = clamp(hz + (B.z - hz) * .5, -C.cz, C.cz);
+    }
+    const dx = tx - s.x, dz = tz - s.z, d = Math.hypot(dx, dz);
+    if (d > .6) { const sp = Math.min(1, d / 2) * r.spd * (keeper ? .75 : press ? 1 : .85); o.mx = dx / d * sp; o.mz = dz / d * sp; }
+    const rng = Math.max(18, Math.min(34, C.fl * .45)), nearWall = Math.abs(B.x) > C.fw / 2 - 3 || Math.abs(B.z) > C.fl / 2 - 3;
+    if (press && dB < 2.7 && (bh < -.2 || keeper || nearWall) && s.kcd <= 0 && (keeper || gl < rng || Math.random() < dt * .25) && Math.random() < dt * (4 + 4 * r.skill)) {
+      const ax = (Math.random() - .5) * C.gw * (1.4 - r.skill * .7), ux = ax - B.x, uz = gz - B.z, ul = Math.hypot(ux, uz) || 1;
+      o.kick = true; o.kdir = [ux / ul, uz / ul];
+    }
+    if (B.y > 2.6 && dB < 4 && s.g && Math.random() < dt * 3) o.jump = true;
+    return o;
+  }
+  function doKick(r, inp, dt) {
+    const s = r.st, B = C.ball; s.kcd = Math.max(0, s.kcd - dt); s.kick = Math.max(0, s.kick - dt);
+    if (!inp.kick || s.kcd > 0 || mode !== 'race') return;
+    s.kcd = .45; s.kick = .25;
+    const d = Math.hypot(B.x - s.x, B.z - s.z); if (d > 3.4 || B.y > 3.4) return;
+    let ux, uz; if (inp.kdir) { ux = inp.kdir[0]; uz = inp.kdir[1]; s.face = Math.atan2(ux, uz); } else { ux = Math.sin(s.face); uz = Math.cos(s.face); }
+    const pw = r.ai ? 20 + 6 * r.skill : 24; B.vx = ux * pw; B.vz = uz * pw; B.vy = 4.5; B.y = Math.max(B.y, 1.05); B.last = r;
+  }
+  function goalScored(t) {
+    C.sc[t]++; mode = 'goal'; C.goalT = 2.4; const w = C.ball.last, who = w && w.team === t ? w : null;
+    if (who) who.goals++;
+    $('cd').innerHTML = '<div style="font-size:60px">⚽ GOAL!</div><div style="font-size:24px;font-weight:700">' + (t === 0 ? '🔵 ' : '🔴 ') + (who ? esc(nameOf(who)) : '자책골') + '</div>';
+    if (C.sc[t] >= C.win) C.over = t;
+  }
+  function endSoccer() {
+    mode = 'done'; const win = C.over === 0, reward = win ? 300 : 50, total = giveReward(reward); refreshSkin();
+    $('rt').textContent = (win ? '🏆 승리!' : '😿 패배') + ' · ' + C.sc[0] + ' : ' + C.sc[1];
+    const sc = ACT.filter(r => r.goals > 0).sort((a, b) => b.goals - a.goals);
+    $('list').innerHTML = '<b>💰 +' + won(reward) + '원' + (total !== null ? ' (보유 ' + won(total) + '원)' : '') + '</b><br>🔵 ' + C.sc[0] + ' : ' + C.sc[1] + ' 🔴<br>' +
+      (sc.length ? sc.map(r => (r.team ? '🔴 ' : '🔵 ') + (r.i ? esc(r.name) : '<b>' + esc(myName()) + '</b>') + ' ⚽ ' + r.goals + '골').join('<br>') : '');
+    $('res').style.display = 'flex';
+  }
+  function socUpdate(dt, now) {
+    const B = C.ball, FW = C.fw, FL = C.fl, GW = C.gw;
+    if (mode === 'race') {
+      ACT.forEach(r => {
+        const s = r.st, dx = B.x - s.x, dz = B.z - s.z, d = Math.hypot(dx, dz), rr = 1.55;
+        if (d < rr && B.y - 1 < s.y + 3 && B.y + 1 > s.y + .2) {
+          const nx = d > .001 ? dx / d : Math.sin(s.face), nz = d > .001 ? dz / d : Math.cos(s.face);
+          B.x = s.x + nx * rr; B.z = s.z + nz * rr;
+          const bvn = B.vx * nx + B.vz * nz, cvn = s.vx * nx + s.vz * nz, tg = Math.max(0, cvn * 1.2 + 2.5);
+          if (bvn < tg) { B.vx += nx * (tg - bvn); B.vz += nz * (tg - bvn); }
+          B.last = r;
+        }
+      });
+    }
+    for (let a = 0; a < ACT.length; a++) for (let b = a + 1; b < ACT.length; b++) {
+      const p = ACT[a].st, q = ACT[b].st; if (Math.abs(p.y - q.y) > 2.5) continue;
+      const dx = q.x - p.x, dz = q.z - p.z, d = Math.hypot(dx, dz);
+      if (d < 1.1 && d > .001) { const m = (1.1 - d) / 2 / d; p.x -= dx * m; p.z -= dz * m; q.x += dx * m; q.z += dz * m; }
+    }
+    if (mode === 'race') {
+      const slow = Math.hypot(B.vx, B.vz) < .8, edge = Math.abs(B.x) > FW / 2 - 3 || (Math.abs(B.z) > FL / 2 - 3 && Math.abs(B.x) > GW / 2 - 1);
+      C.idle = slow && edge ? (C.idle || 0) + dt : 0;
+      if (C.idle > 3) { C.idle = 0; B.x *= .45; B.z *= .45; B.vx = B.vz = 0; B.vy = 3; }
+    }
+    B.vy -= 26 * dt; B.y += B.vy * dt;
+    if (B.y < 1) { B.y = 1; B.vy = B.vy < -2.5 ? -B.vy * .55 : 0; }
+    const fr = Math.pow(B.y <= 1.02 ? .45 : .9, dt); B.vx *= fr; B.vz *= fr;
+    B.x += B.vx * dt; B.z += B.vz * dt;
+    if (Math.abs(B.x) > FW / 2 - 1 && Math.abs(B.z) <= FL / 2 - 1) { B.x = Math.sign(B.x) * (FW / 2 - 1); B.vx *= -.75; }
+    const az = Math.abs(B.z);
+    if (az > FL / 2 - 1) {
+      if (Math.abs(B.x) < GW / 2 - .2 && B.y < 4.1) {
+        if (az > FL / 2 + .2 && mode === 'race') goalScored(B.z < 0 ? 0 : 1);
+        if (az > FL / 2 + 2.6) { B.z = Math.sign(B.z) * (FL / 2 + 2.6); B.vz *= -.3; }
+        if (az > FL / 2 && Math.abs(B.x) > GW / 2 - 1.1) { B.x = Math.sign(B.x) * (GW / 2 - 1.1); B.vx *= -.3; }
+      } else if (az < FL / 2 + .5) { B.z = Math.sign(B.z) * (FL / 2 - 1); B.vz *= -.75; if (Math.abs(B.x) > FW / 2 - 1) { B.x = Math.sign(B.x) * (FW / 2 - 1); B.vx *= -.75; } }
+      else { B.z = Math.sign(B.z) * (FL / 2 - 1); B.vz *= -.75; }
+    }
+    B.m.position.set(B.x, B.y, B.z); B.m.rotation.x += B.vz * dt; B.m.rotation.z -= B.vx * dt;
   }
   function toLobby() {
-    curCourse = null; build('lobby'); resetRacers(false); mode = 'lobby'; $('cd').textContent = '';
-    $('res').style.display = 'none'; $('shopb').style.display = 'block'; $('exit').style.display = 'none'; $('rinfo').style.display = 'none'; refreshSkin();
+    curCourse = null; setAct(1); build('lobby'); resetRacers(false); mode = 'lobby'; $('cd').textContent = ''; $('slide').textContent = '슬라이딩';
+    $('res').style.display = 'none'; $('shopb').style.display = $('nameb').style.display = 'block'; $('exit').style.display = 'none'; $('rinfo').style.display = 'none'; refreshSkin();
   }
   $('exit').onclick = toLobby; $('lobby').onclick = toLobby;
-  $('again').onclick = () => startRace(randomCourse());
+  $('again').onclick = () => lastGame.k === 'soc' ? startSoccer(lastGame.n) : startRace(randomCourse(), lastGame.n);
   const prog = r => r.st.fin ? 1e6 - r.st.fin : r.st.z;
   function giveReward(n) {
     try { let g = +localStorage.getItem('catGold') || 0; if (!isFinite(g) || g < 0) g = 0; g += n; localStorage.setItem('catGold', g); return g; } catch (e) { return null; }
   }
   function endRace() {
     mode = 'done'; endT = 0; $('cd').innerHTML = '';
-    const order = R.slice().sort((a, b) => prog(b) - prog(a)), rank = order.indexOf(R[0]) + 1, reward = REWARD[rank - 1];
+    const order = ACT.slice().sort((a, b) => prog(b) - prog(a)), rank = order.indexOf(R[0]) + 1, reward = rewardFor(rank);
     const total = giveReward(reward); refreshSkin();
+    const sc = [0, 0], best = [99, 99]; order.forEach((r, k) => { sc[r.team] += k + 1; best[r.team] = Math.min(best[r.team], k + 1); });
+    let teamLine = '';
+    if (nAct >= 4) { const w = sc[0] < sc[1] || (sc[0] === sc[1] && best[0] < best[1]) ? 0 : 1; teamLine = '<br>' + (w === 0 ? '🔵 우리 팀 승리!' : '🔴 상대 팀 승리') + ' (순위 합계 ' + sc[0] + ' : ' + sc[1] + ', 낮을수록 좋아요)'; }
     $('rt').textContent = (rank === 1 ? '🥇 1등!' : '🏁 ' + rank + '등') + ' · ' + (R[0].st.fin ? R[0].st.fin.toFixed(1) + '초' : Math.round(clamp(R[0].st.z / C.L, 0, 1) * 100) + '% 지점');
-    $('list').innerHTML = '<b>💰 +' + won(reward) + '원' + (total !== null ? ' (보유 ' + won(total) + '원)' : '') + '</b><br>' +
-      order.map((r, k) => (k + 1) + '. ' + (r.i ? r.name : '<b>나</b>') + ' — ' + (r.st.fin ? r.st.fin.toFixed(1) + '초' : Math.round(clamp(r.st.z / C.L, 0, 1) * 100) + '%')).join('<br>');
+    $('list').innerHTML = '<b>💰 +' + won(reward) + '원' + (total !== null ? ' (보유 ' + won(total) + '원)' : '') + '</b>' + teamLine + '<br>' +
+      order.map((r, k) => (k + 1) + '. ' + (r.team ? '🔴 ' : '🔵 ') + (r.i ? esc(r.name) : '<b>' + esc(myName()) + '</b>') + ' — ' + (r.st.fin ? r.st.fin.toFixed(1) + '초' : Math.round(clamp(r.st.z / C.L, 0, 1) * 100) + '%')).join('<br>');
     $('res').style.display = 'flex';
   }
 
@@ -627,6 +824,7 @@
       const air = !s.g, sw = !air ? Math.sin(s.walk) * .8 * Math.min(1, Math.hypot(s.vx, s.vz) / 5) : 0;
       c.g.rotation.x = 0; c.legs[0].rotation.x = air ? -.5 : sw; c.legs[1].rotation.x = air ? .5 : -sw;
       c.arms[0].rotation.x = air ? -2.4 : -sw * .8; c.arms[1].rotation.x = air ? -2.4 : sw * .8;
+      if (s.kick > 0) c.legs[0].rotation.x = -1.8;
     }
     c.tail.rotation.y = Math.sin(now / 280) * .3;
     c.g.visible = r.i === 0 || !!curCourse ? !(s.stun > 0 && ((s.t * 20) | 0) % 2) : false;
@@ -643,30 +841,40 @@
     const dt = Math.min(.05, (now - last) / 1000); last = now;
     if (mode === 'count') { cdT -= dt; $('cd').innerHTML = (cdT > .2 ? Math.ceil(cdT - .2) : 'GO!') + '<div style="font-size:26px;font-weight:700">' + NAMEC[curCourse] + '</div>'; if (cdT <= 0) { mode = 'race'; $('cd').textContent = ''; } }
     else if (mode === 'race') {
-      raceT += dt;
-      if (endT > 0) endT -= dt;
-      if ((placed > 0 && endT <= 0) || R.every(r => r.st.fin)) endRace();
+      if (curCourse !== 'soccer') {
+        raceT += dt;
+        if (endT > 0) endT -= dt;
+        if ((placed > 0 && endT <= 0) || ACT.every(r => r.st.fin)) endRace();
+      }
+    }
+    else if (mode === 'goal') {
+      C.goalT -= dt;
+      if (C.goalT <= 0) { $('cd').innerHTML = ''; if (C.over !== undefined) endSoccer(); else { kickoff(); mode = 'race'; } }
     }
     if (bannerT > 0 && mode === 'race') { bannerT -= dt; $('cd').innerHTML = bannerT > 0 ? '<div style="font-size:30px;font-weight:800">🏁 ' + bannerName + ' 도착!<br>20초 후 경기 종료</div>' : ''; }
     updateMv(now / 1000, dt);
-    if (C.beam) C.beam.rotation.y += dt * 1.5;
-    if (mode === 'lobby' && R[0].st.stand && R[0].st.stand.tele && $('shop').style.display !== 'flex') { teleT += dt; if (teleT > .35) startRace(randomCourse()); } else teleT = 0;
-    R.forEach(r => {
+    const tl = R[0].st.stand && R[0].st.stand.tele;
+    if (mode === 'lobby' && tl && !uiOpen()) { teleT += dt; if (teleT > .35) { tl.k === 'soc' ? startSoccer(tl.n) : startRace(randomCourse(), tl.n); } } else teleT = 0;
+    ACT.forEach(r => {
       if (!curCourse && r.i) return;
       const live = (mode === 'race' || mode === 'lobby') && !(r.i === 0 && r.st.fin);
       let inp = { mx: 0, mz: 0, lat: 0, jump: false, slide: false };
       if (live) inp = r.ai ? aiInput(r, dt) : playerInput();
       if (r.st.fin && r.i) inp = { mx: 0, mz: 0, lat: 0, jump: false, slide: false };
+      if (curCourse === 'soccer') { inp.kick = !!(inp.slide || inp.kick); inp.slide = false; }
       C.mode === 'L' ? stepL(r, inp, dt, now) : stepW(r, inp, dt);
-      if (curCourse && !r.st.fin && mode !== 'count' && r.st.z >= C.L) { r.st.fin = raceT || .01; r.place = ++placed; if (placed === 1) { endT = 20; bannerT = 2.5; bannerName = r.i ? r.name : '나'; } }
+      if (curCourse === 'soccer') doKick(r, inp, dt);
+      if (curCourse && curCourse !== 'soccer' && !r.st.fin && mode !== 'count' && r.st.z >= C.L) { r.st.fin = raceT || .01; r.place = ++placed; if (placed === 1) { endT = 20; bannerT = 2.5; bannerName = r.i ? r.name : '나'; } }
       pose(r, now);
     });
+    if (curCourse === 'soccer') socUpdate(dt, now);
     const P = R[0].st;
-    if (curCourse) {
-      const rank = 1 + R.filter(r => prog(r) > prog(R[0])).length;
-      $('rinfo').textContent = NAMEC[curCourse] + ' · 🏁 ' + rank + '/6 · ' + raceT.toFixed(1) + '초' + (endT > 0 && mode === 'race' ? ' · ⏱ ' + Math.ceil(endT) + '초' : '') + ' · ' + clamp(Math.round(P.z / C.L * 100), 0, 100) + '%';
+    if (curCourse === 'soccer') $('rinfo').textContent = '🔵 ' + C.sc[0] + ' : ' + C.sc[1] + ' 🔴 · ' + C.n + ':' + C.n + ' · ' + C.win + '점 먼저!';
+    else if (curCourse) {
+      const rank = 1 + ACT.filter(r => prog(r) > prog(R[0])).length;
+      $('rinfo').textContent = NAMEC[curCourse] + ' · 🏁 ' + rank + '/' + nAct + ' · ' + raceT.toFixed(1) + '초' + (endT > 0 && mode === 'race' ? ' · ⏱ ' + Math.ceil(endT) + '초' : '') + ' · ' + clamp(Math.round(P.z / C.L * 100), 0, 100) + '%';
     }
-    const lane = C.mode === 'L' && curCourse, D = lane ? (curCourse === 'car' ? 15 : 16) : 13, cp = Math.cos(pitch);
+    const lane = C.mode === 'L' && curCourse, D = lane ? (curCourse === 'car' ? 15 : 16) : curCourse === 'soccer' ? 16 : 13, cp = Math.cos(pitch);
     cam.position.set(P.x + Math.sin(yaw) * cp * D, P.y * .6 + 2 + Math.sin(pitch) * D, P.z + Math.cos(yaw) * cp * D);
     cam.lookAt(P.x, P.y + 2, P.z);
     sun.position.set(P.x + 12, P.y + 24, P.z + 10); sun.target.position.set(P.x, P.y, P.z);
